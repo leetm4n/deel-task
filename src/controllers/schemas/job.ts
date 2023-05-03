@@ -5,10 +5,10 @@ export const jobSchema: JSONSchema7 = {
   additionalProperties: false,
   required: ['id', 'description', 'price'],
   properties: {
-    id: { type: 'string' },
+    id: { type: 'number' },
     description: { type: 'string' },
     price: { type: 'number' },
     paid: { type: 'boolean' },
-    paymentDate: { type: 'string', format: 'date-time' },
+    paymentDate: { type: ['string', 'null'], format: 'date-time' },
   },
 };

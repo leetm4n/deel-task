@@ -10,6 +10,7 @@
   },
   "scripts": {
     "lint": "eslint ./**/*.ts",
+    "build": "tsc",
     "start": "ts-node-dev --files ./src/start.ts",
     "seed": "ts-node-dev ./src/scripts/seed-db.ts",
     "test": "jest"

@@ -10,7 +10,7 @@ export const addJobRoutes = (instance: ServerInstance): void => {
       response: {
         200: {
           type: 'array',
-          item: jobSchema,
+          items: jobSchema,
         },
         401: errorSchema,
         404: errorSchema,
@@ -68,10 +68,15 @@ export const addJobRoutes = (instance: ServerInstance): void => {
       },
     } as const,
     handler: async (req) => {
-      const { id: userId, balance } = req.user;
+      const { id: userId } = req.user;
       const { jobId } = req.params;
 
       await req.sequelize.transaction(async (transaction) => {
+        const user = await req.models.ProfileModel.findByPk(userId, { transaction });
+        if (!user) {
+          throw new EntityNotFoundError();
+        }
+
         const job = await req.models.JobModel.findOne({
           where: {
             id: jobId,
@@ -95,17 +100,17 @@ export const addJobRoutes = (instance: ServerInstance): void => {
           throw new JobAlreadyPaidError();
         }
 
-        if (job.price > balance) {
+        if (job.price > user.balance) {
           throw new InsufficientBalanceError();
         }
 
-        const contractor = await req.models.ProfileModel.findByPk(job.contract?.contractorId);
+        const contractor = await req.models.ProfileModel.findByPk(job.contract?.contractorId, { transaction });
 
         if (!contractor) {
           throw new EntityNotFoundError();
         }
 
-        await req.user.decrement('balance', { by: job.price, transaction });
+        await user.decrement('balance', { by: job.price, transaction });
         await contractor.increment('balance', { by: job.price, transaction });
 
         job.paymentDate = new Date();

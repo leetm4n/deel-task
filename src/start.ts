@@ -13,16 +13,24 @@ import { ServerInstance, createServer } from './server';
 
 const DEFAULT_PORT = '1337';
 
-export const setupServer = async (
-  logger: Logger,
+export const setupServer = async ({
+  logger,
   inMemoryDatabase = false,
   shouldSeed = false,
-): Promise<ServerInstance> => {
-  const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: inMemoryDatabase ? ':memory:' : './database.sqlite3',
-    logging: (sql, timing) => logger.info(sql, typeof timing === 'number' ? `Elapsed time: ${timing}ms` : ''),
-  });
+  sequelizeInjected,
+}: {
+  logger: Logger;
+  inMemoryDatabase?: boolean;
+  shouldSeed?: boolean;
+  sequelizeInjected?: Sequelize;
+}): Promise<ServerInstance> => {
+  const sequelize = sequelizeInjected
+    ? sequelizeInjected
+    : new Sequelize({
+        dialect: 'sqlite',
+        storage: inMemoryDatabase ? `:memory:` : './database.sqlite3',
+        logging: (sql, timing) => logger.info(sql, typeof timing === 'number' ? `Elapsed time: ${timing}ms` : ''),
+      });
 
   if (shouldSeed) {
     await seed(sequelize);
@@ -89,7 +97,7 @@ if (require.main === module) {
   const PORT = parseInt(process.env.PORT ?? DEFAULT_PORT, 10);
 
   const main = async (): Promise<void> => {
-    const server = await setupServer(logger);
+    const server = await setupServer({ logger });
     await server.listen({
       host: '0.0.0.0',
       port: PORT,

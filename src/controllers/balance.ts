@@ -1,3 +1,4 @@
+import { ProfileType } from '../entities/model';
 import { ServerInstance } from '../server';
 import { EntityNotFoundError, InsufficientBalanceError, MaxDepositError } from './error/errors';
 import { errorSchema } from './schemas/errors';
@@ -43,6 +44,24 @@ export const addBalanceRoutes = (instance: ServerInstance): void => {
       const { amount } = req.body;
 
       await req.sequelize.transaction(async (transaction) => {
+        const user = await req.models.ProfileModel.findByPk(userId, { transaction });
+        if (!user) {
+          throw new EntityNotFoundError();
+        }
+
+        // must be client
+        const clientProfile = await req.models.ProfileModel.findOne({
+          where: {
+            id: clientId,
+            type: ProfileType.CLIENT,
+          },
+          transaction,
+        });
+
+        if (!clientProfile) {
+          throw new EntityNotFoundError();
+        }
+
         const jobs = await req.models.JobModel.findAll({
           where: {
             paid: false,
@@ -63,18 +82,12 @@ export const addBalanceRoutes = (instance: ServerInstance): void => {
           throw new MaxDepositError();
         }
 
-        if (amount > req.user.balance) {
+        if (amount > user.balance) {
           throw new InsufficientBalanceError();
         }
 
-        const clientProfile = await req.models.ProfileModel.findByPk(clientId);
-
-        if (!clientProfile) {
-          throw new EntityNotFoundError();
-        }
-
         await clientProfile.increment('balance', { by: amount, transaction });
-        await req.user.decrement('balance', { by: amount, transaction });
+        await user.decrement('balance', { by: amount, transaction });
       });
 
       return { deposited: true };

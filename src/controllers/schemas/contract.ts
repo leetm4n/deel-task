@@ -5,7 +5,7 @@ export const contractSchema: JSONSchema6 = {
   additionalProperties: false,
   required: ['id', 'terms', 'status'],
   properties: {
-    id: { type: 'string' },
+    id: { type: 'number' },
     terms: { type: 'string' },
     status: { type: 'string' },
   },

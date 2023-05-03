@@ -3,7 +3,7 @@ name: Lint and Test
 on: [push, pull_request]
 
 jobs:
-  eslint:
+  eslint-audit-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,6 +16,8 @@ jobs:
         run: npm install
       - name: Audit
         run: npm audit
+      - name: Compile TS
+        run: npm run build
       - name: Run ESLint
         run: npm run lint
   test:
